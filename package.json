@@ -1,0 +1,19 @@
+{
+  "name": "com.cupkekgames.shapes",
+  "displayName": "CupkekGames Shapes",
+  "version": "0.1.0",
+  "author": {
+    "name": "CupkekGames",
+    "url": "https://www.docs.cupkek.games"
+  },
+  "unity": "6000.0",
+  "documentationUrl": "https://docs.cupkek.games/",
+  "description": "Wrappers + helpers around the Freya Shapes addon: PolylineSpline, SplineUIToRaycast, gradient utilities, depth-projected UI splines.",
+  "keywords": [
+    "Shapes",
+    "FreyaShapes",
+    "Spline",
+    "CupkekGames"
+  ],
+  "dependencies": {}
+}
