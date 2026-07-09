@@ -3,6 +3,7 @@ using global::Shapes;
 
 namespace CupkekGames.Shapes
 {
+    [System.Serializable]
     public abstract class Shape
     {
         public LineGeometry LineGeometry = LineGeometry.Volumetric3D;
