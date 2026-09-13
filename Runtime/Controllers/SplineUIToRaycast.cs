@@ -21,6 +21,10 @@ namespace CupkekGames.Shapes
         private Vector3 _offsetEndTangent = new Vector3(0, 2, 0);
         private float _endTangentLerp = 0.5f;
         private float _endFixedHeight = 0f;
+        // Where the arc ends. The default raycasts the mouse on _layerMask;
+        // a consumer that already raycasts the pointer each frame supplies
+        // its answer here instead (null = no ground under the pointer).
+        private Func<Vector3?> _endPointProvider;
         // State
         private Coroutine _updateCoroutine;
         private WaitForSeconds _internal = new WaitForSeconds(0.02f);
@@ -41,6 +45,10 @@ namespace CupkekGames.Shapes
         public void SetLayerMask(LayerMask layerMask)
         {
             _layerMask = layerMask;
+        }
+        public void SetEndPointProvider(Func<Vector3?> provider)
+        {
+            _endPointProvider = provider;
         }
         public void SetDepth(float depth)
         {
@@ -95,13 +103,11 @@ namespace CupkekGames.Shapes
         {
             while (true)
             {
-                Vector2 mouseScreenPosition = Mouse.current.position.ReadValue();
+                Vector3? endPoint = _endPointProvider != null ? _endPointProvider() : RaycastEndPoint();
 
-                Ray mouseRay = _camera.ScreenPointToRay(mouseScreenPosition);
-
-                if (Physics.Raycast(mouseRay, out RaycastHit hit, 1000f, _layerMask))
+                if (endPoint.HasValue)
                 {
-                    Vector3 end = hit.point;
+                    Vector3 end = endPoint.Value;
                     end.y = _endFixedHeight;
 
                     // distance between end and last end
@@ -128,6 +134,13 @@ namespace CupkekGames.Shapes
 
                 yield return _internal;
             }
+        }
+
+        private Vector3? RaycastEndPoint()
+        {
+            Vector2 mouseScreenPosition = Mouse.current.position.ReadValue();
+            Ray mouseRay = _camera.ScreenPointToRay(mouseScreenPosition);
+            return Physics.Raycast(mouseRay, out RaycastHit hit, 1000f, _layerMask) ? hit.point : null;
         }
     }
 }
