@@ -27,7 +27,8 @@ namespace CupkekGames.Shapes
         private Func<Vector3?> _endPointProvider;
         // State
         private Coroutine _updateCoroutine;
-        private WaitForSeconds _internal = new WaitForSeconds(0.02f);
+        // Unscaled: the arc follows the pointer while the game is paused.
+        private WaitForSecondsRealtime _internal = new WaitForSecondsRealtime(0.02f);
         private float _minDistance = 0.1f;
         private Vector3 _lastEndPosition;
         public event Action OnUpdate;
@@ -80,7 +81,7 @@ namespace CupkekGames.Shapes
         }
         public void SetInternal(float internalTimeSeconds)
         {
-            _internal = new WaitForSeconds(internalTimeSeconds);
+            _internal = new WaitForSecondsRealtime(internalTimeSeconds);
         }
         public void Start()
         {
