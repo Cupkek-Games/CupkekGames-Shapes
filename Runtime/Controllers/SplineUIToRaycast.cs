@@ -25,6 +25,9 @@ namespace CupkekGames.Shapes
         // a consumer that already raycasts the pointer each frame supplies
         // its answer here instead (null = no ground under the pointer).
         private Func<Vector3?> _endPointProvider;
+        // Where the arc starts. The default projects the element's centre
+        // _depth units into the scene; a consumer can place it instead.
+        private Func<Vector3?> _startPointProvider;
         // State
         private Coroutine _updateCoroutine;
         // Unscaled: the arc follows the pointer while the game is paused.
@@ -50,6 +53,10 @@ namespace CupkekGames.Shapes
         public void SetEndPointProvider(Func<Vector3?> provider)
         {
             _endPointProvider = provider;
+        }
+        public void SetStartPointProvider(Func<Vector3?> provider)
+        {
+            _startPointProvider = provider;
         }
         public void SetDepth(float depth)
         {
@@ -117,9 +124,13 @@ namespace CupkekGames.Shapes
                     {
                         _lastEndPosition = end;
 
-                        Rect rect = _visualElement.worldBound;
-                        Vector3 screenPosition = new Vector3(rect.center.x, Screen.height - rect.center.y, _depth);
-                        Vector3 start = _camera.ScreenToWorldPoint(screenPosition);
+                        Vector3? startPoint = _startPointProvider != null ? _startPointProvider() : ProjectedStartPoint();
+                        if (!startPoint.HasValue)
+                        {
+                            yield return _internal;
+                            continue;
+                        }
+                        Vector3 start = startPoint.Value;
 
                         Vector3 interpolatedPosition = Vector3.Lerp(start, end, _endTangentLerp);
 
@@ -139,9 +150,22 @@ namespace CupkekGames.Shapes
 
         private Vector3? RaycastEndPoint()
         {
+            Camera camera = ActiveCamera;
+            if (camera == null) return null;
             Vector2 mouseScreenPosition = Mouse.current.position.ReadValue();
-            Ray mouseRay = _camera.ScreenPointToRay(mouseScreenPosition);
+            Ray mouseRay = camera.ScreenPointToRay(mouseScreenPosition);
             return Physics.Raycast(mouseRay, out RaycastHit hit, 1000f, _layerMask) ? hit.point : null;
         }
+
+        private Vector3? ProjectedStartPoint()
+        {
+            Camera camera = ActiveCamera;
+            if (camera == null) return null;
+            Rect rect = _visualElement.worldBound;
+            return camera.ScreenToWorldPoint(new Vector3(rect.center.x, Screen.height - rect.center.y, _depth));
+        }
+
+        // The camera handed in may die with a scene boot; fall back to the live main camera.
+        private Camera ActiveCamera => _camera != null ? _camera : Camera.main;
     }
 }
