@@ -34,6 +34,9 @@ namespace CupkekGames.Shapes
         private WaitForSecondsRealtime _internal = new WaitForSecondsRealtime(0.02f);
         private float _minDistance = 0.1f;
         private Vector3 _lastEndPosition;
+        private Vector3 _lastStartPosition;
+        // False until the arc is drawn after a Start: a new aim draws at once, wherever it ends.
+        private bool _drawn;
         public event Action OnUpdate;
         public SplineUIToRaycast(PolylineSpline polylineSpline, Camera mainCamera)
         {
@@ -92,6 +95,7 @@ namespace CupkekGames.Shapes
         }
         public void Start()
         {
+            _drawn = false;
             _updateCoroutine = _polylineSpline.StartCoroutine(UpdateCoroutine());
         }
         public void Stop()
@@ -113,24 +117,19 @@ namespace CupkekGames.Shapes
             {
                 Vector3? endPoint = _endPointProvider != null ? _endPointProvider() : RaycastEndPoint();
 
-                if (endPoint.HasValue)
+                Vector3? startPoint = endPoint.HasValue ? (_startPointProvider != null ? _startPointProvider() : ProjectedStartPoint()) : null;
+                if (endPoint.HasValue && startPoint.HasValue)
                 {
                     Vector3 end = endPoint.Value;
                     end.y = _endFixedHeight;
+                    Vector3 start = startPoint.Value;
 
-                    // distance between end and last end
-                    float distance = Vector3.Distance(end, _lastEndPosition);
-                    if (distance > _minDistance)
+                    // Redrawn when either end moved: the pointer, or the hand it is thrown from.
+                    if (!_drawn || Vector3.Distance(end, _lastEndPosition) > _minDistance || Vector3.Distance(start, _lastStartPosition) > _minDistance)
                     {
+                        _drawn = true;
                         _lastEndPosition = end;
-
-                        Vector3? startPoint = _startPointProvider != null ? _startPointProvider() : ProjectedStartPoint();
-                        if (!startPoint.HasValue)
-                        {
-                            yield return _internal;
-                            continue;
-                        }
-                        Vector3 start = startPoint.Value;
+                        _lastStartPosition = start;
 
                         Vector3 interpolatedPosition = Vector3.Lerp(start, end, _endTangentLerp);
 
